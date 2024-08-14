@@ -9,7 +9,7 @@ with open('../data/news.txt', 'r') as f:
 
 df = spark.createDataFrame([[x] for x in data]).toDF('text')
 results = model.predict(df).collect()
-res_txt = ""
+res_txt = "text,entity,ner"
 for result in results:
     txt = result['text']
     try:
@@ -19,8 +19,7 @@ for result in results:
         ent, ner = '', ''
         print(txt)
     
-    newline = '\n' if res_txt  else ''
-    res_txt += f"{newline}{txt}, {ent}, {ner}"
+    res_txt += f"\n{txt}, {ent}, {ner}"
 
 with open('../data/output.csv', 'w') as f:
     f.write(res_txt)
