@@ -1,14 +1,26 @@
 import sparknlp
-from sparknlp.pretrained import PretrainedPipeline
+from ner import NER
 
 spark = sparknlp.start()
+model = NER()
 
-# Load pre-trained pipeline for NER
-pipeline = PretrainedPipeline('recognize_entities_dl', lang='en')
+with open('../data/news.txt', 'r') as f:
+    data = f.read().replace('\n', '').replace(',', ' ').split('.')
 
-# Sample DataFrame
-data = spark.createDataFrame([["Google was founded in 1998 by Larry Page and Sergey Brin."]]).toDF("text")
+df = spark.createDataFrame([[x] for x in data]).toDF('text')
+results = model.predict(df).collect()
+res_txt = ""
+for result in results:
+    txt = result['text']
+    try:
+        ent = result['entities'][0]['result']
+        ner = result['entities'][0]['metadata']['entity']
+    except IndexError as e:
+        ent, ner = '', ''
+        print(txt)
+    
+    newline = '\n' if res_txt  else ''
+    res_txt += f"{newline}{txt}, {ent}, {ner}"
 
-# Run NER
-result = pipeline.transform(data)
-result.select("text", "entities").show(truncate=False)
+with open('../data/output.csv', 'w') as f:
+    f.write(res_txt)
